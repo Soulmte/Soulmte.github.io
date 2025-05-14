@@ -213,6 +213,96 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .field-row input[type="checkbox"] {
+            width: auto;
+            padding: 0;
+            margin-right: 5px;
+        }
+        
+        .field-row .checkbox-info {
+            color: #7f8c8d;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+
+        .distribution-field {
+            background-color: #f0f7ff;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            border-left: 3px solid #3498db;
+        }
+
+        .multi-separator-field {
+            background-color: #f0fff7;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 3px solid #2ecc71;
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .option-buttons {
+            margin-bottom: 10px;
+        }
+
+        .add-option-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .add-option-btn:hover {
+            background-color: #2980b9;
+        }
+
+        .options-inputs {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .option-input-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .option-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+        }
+
+        .remove-option-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .remove-option-btn:hover {
+            background-color: #c0392b;
+        }
     </style>
 </head>
 <body>
@@ -301,14 +391,38 @@
                     <div class="field-row">
                         <label>数据类型：</label>
                         <select id="type_${field}" onchange="updateFieldVisibility('${field}')">
-                            <option value="number">数字</option>
                             <option value="text">文本</option>
+                            <option value="number">数字</option>
                             <option value="date">日期</option>
                             <option value="boolean">布尔值</option>
                             <option value="email">电子邮件</option>
                             <option value="phone">手机号码</option>
                             <option value="address">地址</option>
                         </select>
+                    </div>
+                    <div class="field-row distribution-field" id="distribution_row_${field}">
+                        <label>分布类型：</label>
+                        <select id="distribution_${field}">
+                            <option value="uniform">均匀分布</option>
+                            <option value="normal">正态分布</option>
+                            <option value="exponential">指数分布</option>
+                            <option value="poisson">泊松分布</option>
+                            <option value="binomial">二项分布</option>
+                            <option value="geometric">几何分布</option>
+                            <option value="lognormal">对数正态分布</option>
+                            <option value="pareto">帕累托分布</option>
+                            <option value="gamma">伽马分布</option>
+                            <option value="beta">贝塔分布</option>
+                        </select>
+                    </div>
+                    <div class="field-row">
+                        <label>是否多选：</label>
+                        <input type="checkbox" id="multi_${field}" style="width: auto; margin-right: 5px;">
+                        <span class="checkbox-info">(多选时将随机生成1-n个不重复值)</span>
+                    </div>
+                    <div class="field-row multi-separator-field" id="multi_separator_row_${field}" style="display: none;">
+                        <label>多选分隔符：</label>
+                        <input type="text" id="multi_separator_${field}" placeholder="多选值之间的分隔符" value="|" />
                     </div>
                     <div class="field-row number-field" id="min_row_${field}">
                         <label>最小值：</label>
@@ -318,32 +432,101 @@
                         <label>最大值：</label>
                         <input type="text" id="max_${field}" placeholder="请输入最大值" />
                     </div>
+                    <div class="field-row number-field" id="decimal_row_${field}">
+                        <label>小数点设置：</label>
+                        <select id="decimal_${field}">
+                            <option value="auto">自动(根据分布类型)</option>
+                            <option value="0">无小数点</option>
+                            <option value="1">保留1位小数</option>
+                            <option value="2">保留2位小数</option>
+                            <option value="3">保留3位小数</option>
+                            <option value="4">保留4位小数</option>
+                        </select>
+                    </div>
                     <div class="field-row text-field" id="text_range_row_${field}" style="display: none;">
                         <label>可选值：</label>
-                        <input type="text" id="text_range_${field}" placeholder="请输入可选值，用逗号分隔" />
+                        <div class="options-container" id="text_options_${field}">
+                            <div class="option-buttons">
+                                <button type="button" class="add-option-btn" onclick="addOptionInput('${field}', 'text')">添加选项</button>
+                            </div>
+                            <div class="options-inputs" id="text_inputs_${field}">
+                                <div class="option-input-row">
+                                    <input type="text" class="option-input" placeholder="请输入选项值"/>
+                                    <button type="button" class="remove-option-btn" onclick="removeOptionInput(this)">×</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="field-row email-field" id="email_suffix_row_${field}" style="display: none;">
                         <label>邮箱后缀：</label>
-                        <input type="text" id="email_suffix_${field}" placeholder="多个后缀用逗号分隔，如：gmail.com,qq.com" />
+                        <div class="options-container" id="email_options_${field}">
+                            <div class="option-buttons">
+                                <button type="button" class="add-option-btn" onclick="addOptionInput('${field}', 'email')">添加后缀</button>
+                            </div>
+                            <div class="options-inputs" id="email_inputs_${field}">
+                                <div class="option-input-row">
+                                    <input type="text" class="option-input" placeholder="请输入邮箱后缀，如：gmail.com"/>
+                                    <button type="button" class="remove-option-btn" onclick="removeOptionInput(this)">×</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="field-row address-field" id="provinces_row_${field}" style="display: none;">
                         <label>省份：</label>
-                        <input type="text" id="provinces_${field}" placeholder="多个省份用逗号分隔" />
+                        <div class="options-container" id="provinces_options_${field}">
+                            <div class="option-buttons">
+                                <button type="button" class="add-option-btn" onclick="addOptionInput('${field}', 'province')">添加省份</button>
+                            </div>
+                            <div class="options-inputs" id="province_inputs_${field}">
+                                <div class="option-input-row">
+                                    <input type="text" class="option-input" placeholder="请输入省份"/>
+                                    <button type="button" class="remove-option-btn" onclick="removeOptionInput(this)">×</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="field-row address-field" id="cities_row_${field}" style="display: none;">
                         <label>城市：</label>
-                        <input type="text" id="cities_${field}" placeholder="多个城市用逗号分隔" />
+                        <div class="options-container" id="cities_options_${field}">
+                            <div class="option-buttons">
+                                <button type="button" class="add-option-btn" onclick="addOptionInput('${field}', 'city')">添加城市</button>
+                            </div>
+                            <div class="options-inputs" id="city_inputs_${field}">
+                                <div class="option-input-row">
+                                    <input type="text" class="option-input" placeholder="请输入城市"/>
+                                    <button type="button" class="remove-option-btn" onclick="removeOptionInput(this)">×</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="field-row address-field" id="districts_row_${field}" style="display: none;">
                         <label>区域：</label>
-                        <input type="text" id="districts_${field}" placeholder="多个区域用逗号分隔" />
+                        <div class="options-container" id="districts_options_${field}">
+                            <div class="option-buttons">
+                                <button type="button" class="add-option-btn" onclick="addOptionInput('${field}', 'district')">添加区域</button>
+                            </div>
+                            <div class="options-inputs" id="district_inputs_${field}">
+                                <div class="option-input-row">
+                                    <input type="text" class="option-input" placeholder="请输入区域"/>
+                                    <button type="button" class="remove-option-btn" onclick="removeOptionInput(this)">×</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 `;
                 container.appendChild(fieldDiv);
 
                 // 在元素添加到DOM后设置初始可见性
                 const selectElement = document.getElementById(`type_${field}`);
+                // 设置默认类型为文本
+                selectElement.value = "text";
                 updateFieldVisibility(field);
+                
+                // 为多选复选框添加事件监听器
+                const multiCheckbox = document.getElementById(`multi_${field}`);
+                multiCheckbox.addEventListener('change', () => {
+                    updateFieldVisibility(field);
+                });
             });
 
             document.getElementById('fieldsContainer').style.display = 'block';
@@ -352,16 +535,25 @@
         // 添加新的函数来处理字段可见性
         function updateFieldVisibility(field) {
             const type = document.getElementById(`type_${field}`).value;
-            const numberFields = document.querySelectorAll(`#min_row_${field}, #max_row_${field}`);
+            const numberFields = document.querySelectorAll(`#min_row_${field}, #max_row_${field}, #decimal_row_${field}`);
             const textField = document.getElementById(`text_range_row_${field}`);
             const emailField = document.getElementById(`email_suffix_row_${field}`);
             const addressFields = document.querySelectorAll(`#provinces_row_${field}, #cities_row_${field}, #districts_row_${field}`);
+            const distributionField = document.getElementById(`distribution_row_${field}`);
+            const multiSeparatorField = document.getElementById(`multi_separator_row_${field}`);
 
             // 隐藏所有字段
             numberFields.forEach(el => el.style.display = 'none');
             textField.style.display = 'none';
             emailField.style.display = 'none';
             addressFields.forEach(el => el.style.display = 'none');
+
+            // 检查是否开启多选
+            const isMulti = document.getElementById(`multi_${field}`).checked;
+            multiSeparatorField.style.display = isMulti ? 'flex' : 'none';
+
+            // 所有类型都显示分布类型
+            distributionField.style.display = 'flex';
 
             // 根据类型显示相应字段
             switch(type) {
@@ -381,62 +573,223 @@
             }
         }
 
-        function generateRandomValue(type, min, max, field) {
+        function generateRandomValue(type, min, max, field, isMulti, decimal) {
             const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-            switch(type) {
-                case 'number':
-                    min = parseFloat(min) || 0;
-                    max = parseFloat(max) || 100;
-                    return Math.floor(Math.random() * (max - min + 1)) + min;
-                case 'text':
-                    const textRangeInput = document.getElementById(`text_range_${field}`);
-                    let textRange = ['示例文本1', '示例文本2', '示例文本3'];
-                    if (textRangeInput && textRangeInput.value.trim()) {
-                        textRange = textRangeInput.value.split(',').map(s => s.trim()).filter(s => s);
-                    }
-                    return textRange[Math.floor(Math.random() * textRange.length)];
-                case 'date':
-                    const startDate = min ? new Date(min) : new Date('2020-01-01');
-                    const endDate = max ? new Date(max) : new Date();
-                    const randomDate = new Date(startDate.getTime() + Math.random() * (endDate.getTime() - startDate.getTime()));
-                    return randomDate.toISOString().split('T')[0];
-                case 'boolean':
-                    return Math.random() < 0.5;
-                case 'email':
-                    const emailSuffixInput = document.getElementById(`email_suffix_${field}`);
-                    let domains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', '163.com'];
-                    if (emailSuffixInput && emailSuffixInput.value.trim()) {
-                        domains = emailSuffixInput.value.split(',').map(s => s.trim()).filter(s => s);
-                    }
-                    const username = Array.from({length: 8}, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
-                    return `${username}@${domains[Math.floor(Math.random() * domains.length)]}`;
-                case 'phone':
-                    const prefixes = ['130', '131', '132', '133', '134', '135', '136', '137', '138', '139', '150', '151', '152'];
-                    const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-                    const suffix = Math.floor(Math.random() * 100000000).toString().padStart(8, '0');
-                    return prefix + suffix;
-                case 'address':
-                    const provincesInput = document.getElementById(`provinces_${field}`);
-                    const citiesInput = document.getElementById(`cities_${field}`);
-                    const districtsInput = document.getElementById(`districts_${field}`);
+            const distribution = document.getElementById(`distribution_${field}`).value;
+            const multiSeparator = document.getElementById(`multi_separator_${field}`).value || '|';
+            
+            // 根据分布获取选项索引
+            const getDistributedIndex = (array) => {
+                if (!array || array.length === 0) return 0;
+                // 使用分布类型影响选择概率
+                if (distribution === 'uniform') {
+                    // 均匀分布 - 每个选项概率相同
+                    return Math.floor(Math.random() * array.length);
+                } else {
+                    // 其他分布 - 使用分布函数生成的值来选择索引
+                    const index = Math.floor(generateDistributedNumber(
+                        distribution, 
+                        0, 
+                        array.length - 1,
+                        1, 0, 1, 10, 0.5, 2, 2,
+                        '0' // 强制使用整数索引
+                    ));
+                    return Math.max(0, Math.min(array.length - 1, index));
+                }
+            };
+            
+            // 获取可选值数组（根据类型）
+            const getOptionsArray = () => {
+                switch(type) {
+                    case 'number':
+                        min = parseFloat(min) || 0;
+                        max = parseFloat(max) || 100;
+                        // 对于数字，创建一个可能的值范围
+                        const range = [];
+                        // 根据分布类型生成不同的数值
+                        for(let i = 0; i < 30; i++) { // 生成足够多的不同值作为可选项
+                            range.push(generateDistributedNumber(distribution, min, max, 1, 0, 1, 10, 0.5, 2, 2, decimal));
+                        }
+                        // 去重
+                        return [...new Set(range)];
+                    case 'text':
+                        const textOptions = getOptionValues(field, 'text');
+                        return textOptions.length > 0 ? 
+                            textOptions : ['示例文本1', '示例文本2', '示例文本3'];
+                    case 'date':
+                        // 对于日期，根据分布生成日期值
+                        const startDate = min ? new Date(min) : new Date('2020-01-01');
+                        const endDate = max ? new Date(max) : new Date();
+                        const startTime = startDate.getTime();
+                        const endTime = endDate.getTime();
+                        
+                        const dateRange = [];
+                        for(let i = 0; i < 30; i++) {
+                            // 使用分布生成比例值(0-1)，然后转换为时间戳
+                            const ratio = generateDistributedNumber(distribution, 0, 100, 1, 0, 1, 10, 0.5, 2, 2, '2') / 100;
+                            const timestamp = startTime + ratio * (endTime - startTime);
+                            dateRange.push(new Date(timestamp).toISOString().split('T')[0]);
+                        }
+                        // 去重
+                        return [...new Set(dateRange)];
+                    case 'boolean':
+                        return [true, false];
+                    case 'email':
+                        // 生成一些不同的邮箱作为可选值
+                        const emailOptions = [];
+                        const emailDomains = getOptionValues(field, 'email');
+                        const availableDomains = emailDomains.length > 0 ? 
+                            emailDomains : ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', '163.com'];
+                        
+                        for(let i = 0; i < 10; i++) {
+                            const username = Array.from({length: 8}, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
+                            emailOptions.push(`${username}@${availableDomains[getDistributedIndex(availableDomains)]}`);
+                        }
+                        return emailOptions;
+                    case 'phone':
+                        const prefixes = ['130', '131', '132', '133', '134', '135', '136', '137', '138', '139', '150', '151', '152'];
+                        // 生成一些不同的手机号作为可选值
+                        const phones = [];
+                        for(let i = 0; i < 10; i++) {
+                            const prefix = prefixes[getDistributedIndex(prefixes)];
+                            const suffix = Math.floor(Math.random() * 100000000).toString().padStart(8, '0');
+                            phones.push(prefix + suffix);
+                        }
+                        return phones;
+                    case 'address':
+                        // 生成一些不同的地址作为可选值
+                        const addresses = [];
+                        const provinceOpts = getOptionValues(field, 'province');
+                        const cityOpts = getOptionValues(field, 'city');
+                        const districtOpts = getOptionValues(field, 'district');
+                        
+                        const availableProvinces = provinceOpts.length > 0 ? 
+                            provinceOpts : ['北京市', '上海市', '广东省', '江苏省', '浙江省'];
+                        const availableCities = cityOpts.length > 0 ? 
+                            cityOpts : ['市辖区', '南京市', '杭州市', '广州市', '深圳市'];
+                        const availableDistricts = districtOpts.length > 0 ? 
+                            districtOpts : ['朝阳区', '海淀区', '浦东新区', '福田区', '姑苏区'];
+                        
+                        for(let i = 0; i < Math.min(availableProvinces.length * availableCities.length, 10); i++) {
+                            addresses.push(
+                                `${availableProvinces[getDistributedIndex(availableProvinces)]}` +
+                                `${availableCities[getDistributedIndex(availableCities)]}` +
+                                `${availableDistricts[getDistributedIndex(availableDistricts)]}`
+                            );
+                        }
+                        return addresses;
+                    default:
+                        return [''];
+                }
+            };
+            
+            // 单个值生成函数
+            const generateSingleValue = () => {
+                switch(type) {
+                    case 'number':
+                        min = parseFloat(min) || 0;
+                        max = parseFloat(max) || 100;
+                        // 使用分布函数生成数值
+                        return generateDistributedNumber(distribution, min, max, 1, 0, 1, 10, 0.5, 2, 2, decimal);
+                    case 'text':
+                        const textValues = getOptionValues(field, 'text');
+                        const availableTexts = textValues.length > 0 ? 
+                            textValues : ['示例文本1', '示例文本2', '示例文本3'];
+                        return availableTexts[getDistributedIndex(availableTexts)];
+                    case 'date':
+                        const startDate = min ? new Date(min) : new Date('2020-01-01');
+                        const endDate = max ? new Date(max) : new Date();
+                        const startTime = startDate.getTime();
+                        const endTime = endDate.getTime();
+                        
+                        // 使用分布生成比例值(0-1)，然后转换为时间戳
+                        const ratio = generateDistributedNumber(distribution, 0, 100, 1, 0, 1, 10, 0.5, 2, 2, '2') / 100;
+                        const timestamp = startTime + ratio * (endTime - startTime);
+                        return new Date(timestamp).toISOString().split('T')[0];
+                    case 'boolean':
+                        // 对于布尔值，可以根据分布影响true/false的概率
+                        if (distribution === 'uniform') {
+                            return Math.random() < 0.5; // 均匀分布，50%的概率
+                        } else {
+                            // 其他分布使用生成的值来确定概率
+                            const value = generateDistributedNumber(distribution, 0, 100, 1, 0, 1, 10, 0.5, 2, 2, '2') / 100;
+                            return value < 0.5;
+                        }
+                    case 'email':
+                        const emailDomainsForSingle = getOptionValues(field, 'email');
+                        const availableDomainsForSingle = emailDomainsForSingle.length > 0 ? 
+                            emailDomainsForSingle : ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', '163.com'];
+                        const usernameForSingle = Array.from({length: 8}, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
+                        return `${usernameForSingle}@${availableDomainsForSingle[getDistributedIndex(availableDomainsForSingle)]}`;
+                    case 'phone':
+                        const prefixes = ['130', '131', '132', '133', '134', '135', '136', '137', '138', '139', '150', '151', '152'];
+                        const prefix = prefixes[getDistributedIndex(prefixes)];
+                        const suffix = Math.floor(Math.random() * 100000000).toString().padStart(8, '0');
+                        return prefix + suffix;
+                    case 'address':
+                        const provinceOptsForSingle = getOptionValues(field, 'province');
+                        const cityOptsForSingle = getOptionValues(field, 'city');
+                        const districtOptsForSingle = getOptionValues(field, 'district');
+                        
+                        const availableProvincesForSingle = provinceOptsForSingle.length > 0 ? 
+                            provinceOptsForSingle : ['北京市', '上海市', '广东省', '江苏省', '浙江省'];
+                        const availableCitiesForSingle = cityOptsForSingle.length > 0 ? 
+                            cityOptsForSingle : ['市辖区', '南京市', '杭州市', '广州市', '深圳市'];
+                        const availableDistrictsForSingle = districtOptsForSingle.length > 0 ? 
+                            districtOptsForSingle : ['朝阳区', '海淀区', '浦东新区', '福田区', '姑苏区'];
+                        
+                        return (
+                            `${availableProvincesForSingle[getDistributedIndex(availableProvincesForSingle)]}` +
+                            `${availableCitiesForSingle[getDistributedIndex(availableCitiesForSingle)]}` +
+                            `${availableDistrictsForSingle[getDistributedIndex(availableDistrictsForSingle)]}`
+                        );
+                    default:
+                        return '';
+                }
+            };
+
+            // 如果是多选，随机生成1-n个值并用自定义分隔符连接
+            if (isMulti) {
+                const options = getOptionsArray();
+                // 最多可选的数量
+                const maxOptions = options.length;
+                // 根据分布类型选择数量
+                let count;
+                if (distribution === 'uniform') {
+                    // 均匀分布 - 1到maxOptions之间随机选择
+                    count = Math.floor(Math.random() * maxOptions) + 1;
+                } else {
+                    // 使用分布函数生成的值来确定数量 (1到maxOptions之间)
+                    count = Math.floor(generateDistributedNumber(distribution, 1, Math.max(1, maxOptions), 1, 0, 1, 10, 0.5, 2, 2, '0'));
+                }
+                count = Math.min(count, maxOptions); // 确保不超过可用选项数
+                
+                // 随机打乱数组并取前count个元素
+                // 按照分布来选择元素，而不是简单地排序
+                const selected = [];
+                const usedIndices = new Set();
+                
+                // 尽量选择不同的元素
+                for (let i = 0; i < count && selected.length < options.length; i++) {
+                    // 使用分布函数选择索引
+                    let index;
+                    let attempts = 0;
+                    do {
+                        index = getDistributedIndex(options);
+                        attempts++;
+                        // 如果尝试了很多次还是找不到未使用的索引，就放弃查找
+                        if (attempts > 20) break;
+                    } while (usedIndices.has(index));
                     
-                    let provinces = ['北京市', '上海市', '广东省', '江苏省', '浙江省'];
-                    let cities = ['市辖区', '南京市', '杭州市', '广州市', '深圳市'];
-                    let districts = ['朝阳区', '海淀区', '浦东新区', '福田区', '姑苏区'];
-                    
-                    if (provincesInput && provincesInput.value.trim()) {
-                        provinces = provincesInput.value.split(',').map(s => s.trim()).filter(s => s);
+                    if (!usedIndices.has(index)) {
+                        usedIndices.add(index);
+                        selected.push(options[index]);
                     }
-                    if (citiesInput && citiesInput.value.trim()) {
-                        cities = citiesInput.value.split(',').map(s => s.trim()).filter(s => s);
-                    }
-                    if (districtsInput && districtsInput.value.trim()) {
-                        districts = districtsInput.value.split(',').map(s => s.trim()).filter(s => s);
-                    }
-                    
-                    return `${provinces[Math.floor(Math.random() * provinces.length)]}${cities[Math.floor(Math.random() * cities.length)]}${districts[Math.floor(Math.random() * districts.length)]}`;
-                default:
-                    return '';
+                }
+                
+                return selected.join(multiSeparator);
+            } else {
+                return generateSingleValue();
             }
         }
 
@@ -447,7 +800,9 @@
                 config[field] = {
                     type: document.getElementById(`type_${field}`).value,
                     min: document.getElementById(`min_${field}`).value,
-                    max: document.getElementById(`max_${field}`).value
+                    max: document.getElementById(`max_${field}`).value,
+                    decimal: document.getElementById(`decimal_${field}`).value,
+                    isMulti: document.getElementById(`multi_${field}`).checked
                 };
             });
 
@@ -459,7 +814,9 @@
                         config[field].type,
                         config[field].min,
                         config[field].max,
-                        field
+                        field,
+                        config[field].isMulti,
+                        config[field].decimal
                     );
                 });
                 data.push(row);
@@ -544,6 +901,299 @@
                 document.getElementById('excelFile').dispatchEvent(new Event('change'));
             }
         });
+
+        // 数学分布函数
+        function generateDistributedNumber(distribution, min, max, lambda = 1, mean = 0, stddev = 1, n = 10, p = 0.5, alpha = 2, beta = 2, decimal = 'auto') {
+            // 确保min和max为数字
+            min = parseFloat(min) || 0;
+            max = parseFloat(max) || 100;
+            
+            // 计算均值和标准差
+            // 如果没有指定，则根据范围计算合理的默认值
+            if (mean === 0) {
+                mean = (min + max) / 2; // 默认使用范围的中间值作为均值
+            }
+            
+            if (stddev === 1) {
+                stddev = (max - min) / 6; // 默认使用范围的1/6作为标准差（正态分布68-95-99.7规则）
+                stddev = Math.max(1, stddev); // 确保至少为1
+            }
+            
+            // lambda参数也基于范围
+            if (lambda === 1) {
+                lambda = 1 / ((max - min) / 10); // 根据范围设置lambda
+                lambda = Math.max(0.1, Math.min(10, lambda)); // 限制lambda范围
+            }
+            
+            // 辅助函数：生成标准正态分布随机数（Box-Muller变换）
+            const generateNormal = () => {
+                const u1 = Math.random();
+                const u2 = Math.random();
+                const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+                return z0;
+            };
+            
+            // 辅助函数：将值限制在min和max之间
+            const clamp = (value) => Math.min(Math.max(value, min), max);
+
+            // 确保min和max有效
+            if (!isFinite(min)) min = 0;
+            if (!isFinite(max)) max = 100;
+            if (min >= max) max = min + 10;
+
+            let value;
+            switch (distribution) {
+                case 'uniform':
+                    // 均匀分布
+                    value = Math.random() * (max - min) + min;
+                    break;
+                
+                case 'normal':
+                    // 正态分布
+                    value = mean + stddev * generateNormal();
+                    break;
+                
+                case 'exponential':
+                    // 指数分布
+                    value = min + (-Math.log(Math.random()) / lambda) * ((max - min) / 10);
+                    break;
+                
+                case 'poisson':
+                    // 泊松分布 (knuth算法)
+                    lambda = Math.max(1, lambda); // lambda必须为正数
+                    let L = Math.exp(-lambda);
+                    let k = 0;
+                    let poisson_p = 1; // 重命名变量避免与函数参数冲突
+                    
+                    do {
+                        k++;
+                        poisson_p *= Math.random();
+                    } while (poisson_p > L);
+                    
+                    // 将泊松结果缩放到范围内
+                    value = min + (k - 1) * ((max - min) / (lambda * 2 + 5));
+                    break;
+                
+                case 'binomial':
+                    // 二项分布
+                    n = Math.max(10, n);
+                    let successes = 0;
+                    
+                    for (let i = 0; i < n; i++) {
+                        if (Math.random() < p) {
+                            successes++;
+                        }
+                    }
+                    
+                    // 将二项分布结果缩放到范围内
+                    value = min + (successes / n) * (max - min);
+                    break;
+                
+                case 'geometric':
+                    // 几何分布
+                    const geo_p = Math.max(0.1, Math.min(p, 0.9)); // 避免极端值，重命名避免冲突
+                    const geoValue = Math.floor(Math.log(Math.random()) / Math.log(1 - geo_p));
+                    value = min + (geoValue / 10) * (max - min);
+                    break;
+                
+                case 'lognormal':
+                    // 对数正态分布
+                    const logmean = Math.log((min + max) / 2); // 使用中点的对数作为均值
+                    const logstd = 0.5; // 适中的标准差
+                    value = Math.exp(logmean + logstd * generateNormal());
+                    break;
+                
+                case 'pareto':
+                    // 帕累托分布
+                    alpha = Math.max(1, alpha); // alpha必须大于0
+                    value = min * Math.pow(1 - Math.random() * 0.9, -1 / alpha); // 避免除以零
+                    // 缩放到范围内
+                    value = min + (value - min) * ((max - min) / Math.max(value, max));
+                    break;
+                
+                case 'gamma':
+                    // 伽马分布（近似）
+                    alpha = Math.max(1, alpha); // shape
+                    let gammaValue = 0;
+                    for (let i = 0; i < alpha; i++) {
+                        gammaValue -= Math.log(Math.random());
+                    }
+                    value = min + (gammaValue / beta) * ((max - min) / 10);
+                    break;
+                
+                case 'beta':
+                    // 贝塔分布（近似）
+                    alpha = Math.max(1, alpha);
+                    beta = Math.max(1, beta);
+                    const x = generateGamma(alpha, 1);
+                    const y = generateGamma(beta, 1);
+                    const betaValue = x / (x + y);
+                    value = min + betaValue * (max - min);
+                    break;
+                
+                default:
+                    // 默认均匀分布
+                    value = Math.random() * (max - min) + min;
+            }
+
+            // 根据类型返回整数或浮点数，处理小数位数
+            // decimal: 'auto'(根据分布类型), '0', '1', '2', '3', '4'
+            if (decimal === '0') {
+                // 无小数点
+                return Math.round(clamp(value));
+            } else if (decimal === '1' || decimal === '2' || decimal === '3' || decimal === '4') {
+                // 指定小数位数
+                const decimalPlaces = parseInt(decimal);
+                return parseFloat(clamp(value).toFixed(decimalPlaces));
+            } else {
+                // 自动模式(根据分布类型)
+                if (distribution === 'uniform' || distribution === 'normal' || distribution === 'lognormal') {
+                    // 这些分布通常可以返回小数
+                    return parseFloat(clamp(value).toFixed(2));
+                } else {
+                    // 其他分布通常返回整数
+                    return Math.round(clamp(value));
+                }
+            }
+        }
+        
+        // 伽马分布的辅助函数
+        function generateGamma(alpha, beta) {
+            if (alpha <= 0 || beta <= 0) {
+                return NaN;
+            }
+            
+            // 对于alpha < 1，使用Johnk的算法
+            if (alpha < 1) {
+                const u = Math.random();
+                return generateGamma(alpha + 1, beta) * Math.pow(u, 1 / alpha);
+            }
+            
+            // 对于alpha >= 1，使用Marsaglia和Tsang算法
+            const d = alpha - 1/3;
+            const c = 1 / Math.sqrt(9 * d);
+            let v, x, u;
+            
+            do {
+                do {
+                    x = generateNormal();
+                    v = 1 + c * x;
+                } while (v <= 0);
+                
+                v = v * v * v;
+                u = Math.random();
+            } while (u > 1 - 0.331 * x * x * x * x && 
+                    Math.log(u) > 0.5 * x * x + d * (1 - v + Math.log(v)));
+            
+            return d * v / beta;
+        }
+        
+        // 标准正态分布生成器（Box-Muller）
+        function generateNormal() {
+            let u = 0, v = 0;
+            while (u === 0) u = Math.random();
+            while (v === 0) v = Math.random();
+            return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+        }
+
+        function addOptionInput(field, type) {
+            let container;
+            switch(type) {
+                case 'text':
+                    container = document.getElementById(`text_inputs_${field}`);
+                    break;
+                case 'email':
+                    container = document.getElementById(`email_inputs_${field}`);
+                    break;
+                case 'province':
+                    container = document.getElementById(`province_inputs_${field}`);
+                    break;
+                case 'city':
+                    container = document.getElementById(`city_inputs_${field}`);
+                    break;
+                case 'district':
+                    container = document.getElementById(`district_inputs_${field}`);
+                    break;
+                default:
+                    return;
+            }
+            
+            const newRow = document.createElement('div');
+            newRow.className = 'option-input-row';
+            
+            let placeholder;
+            switch(type) {
+                case 'text':
+                    placeholder = "请输入选项值";
+                    break;
+                case 'email':
+                    placeholder = "请输入邮箱后缀，如：gmail.com";
+                    break;
+                case 'province':
+                    placeholder = "请输入省份";
+                    break;
+                case 'city':
+                    placeholder = "请输入城市";
+                    break;
+                case 'district':
+                    placeholder = "请输入区域";
+                    break;
+                default:
+                    placeholder = "请输入选项";
+            }
+            
+            newRow.innerHTML = `
+                <input type="text" class="option-input" placeholder="${placeholder}"/>
+                <button type="button" class="remove-option-btn" onclick="removeOptionInput(this)">×</button>
+            `;
+            
+            container.appendChild(newRow);
+        }
+        
+        function removeOptionInput(button) {
+            const row = button.parentElement;
+            const container = row.parentElement;
+            
+            // 确保至少保留一个选项
+            if (container.children.length > 1) {
+                container.removeChild(row);
+            } else {
+                // 如果是最后一个，则清空内容
+                const input = row.querySelector('input');
+                if (input) {
+                    input.value = '';
+                }
+            }
+        }
+        
+        // 获取指定类型的所有选项值
+        function getOptionValues(field, type) {
+            let container;
+            switch(type) {
+                case 'text':
+                    container = document.getElementById(`text_inputs_${field}`);
+                    break;
+                case 'email':
+                    container = document.getElementById(`email_inputs_${field}`);
+                    break;
+                case 'province':
+                    container = document.getElementById(`province_inputs_${field}`);
+                    break;
+                case 'city':
+                    container = document.getElementById(`city_inputs_${field}`);
+                    break;
+                case 'district':
+                    container = document.getElementById(`district_inputs_${field}`);
+                    break;
+                default:
+                    return [];
+            }
+            
+            const inputs = container.querySelectorAll('.option-input');
+            return Array.from(inputs)
+                。map(input => input.value.trim())
+                。filter(value => value); // 过滤空值
+        }
     </script>
 </body>
 </html>
